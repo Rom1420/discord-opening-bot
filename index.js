@@ -1,6 +1,17 @@
 import { Client, GatewayIntentBits } from "discord.js";
 import cron from "node-cron";
 import dotenv from "dotenv";
+import http from "http";
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Bot is running!\n");
+});
+server.listen(process.env.PORT || 3000, () => {
+  console.log("🌐 Keep-alive server started");
+});
+
+
 dotenv.config();
 
 const client = new Client({
