@@ -84,8 +84,26 @@ client.on("messageCreate", async (message) => {
   if (message.content === "!simulate") {
     const channel = message.channel;
     const roleMention = `<@&${process.env.ROLE_ID}>`;
-    await channel.send(`${roleMention} 🎁 Test d'opening réussi 🔥`);
-  }
+
+    // Choisir un jour d'opening à venir pour le test (le plus proche dans ton tableau)
+    const today = new Date();
+    const currentDay = today.getDate();
+    const nextOpening = openings.find(o => o.day > currentDay) || openings[0];
+    const diff = nextOpening.day - currentDay;
+    const monthName = today.toLocaleString("fr-FR", { month: "long" });
+    const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+
+    const previewMsg =
+        diff > 0
+        ? `${roleMention} 🧾 **Prévisualisation de l'opening à venir !**\n\n` +
+            `⏳ Plus que **${diff} jour${diff > 1 ? "s" : ""}** avant l'opening du **${nextOpening.day} ${monthName}** ` +
+            `de <@${nextOpening.user}> 💼\n${randomGif}`
+        : `${roleMention} 🎉 **Simulation d'opening en cours !**\n` +
+            `🔥 Opening de <@${nextOpening.user}> aujourd’hui !\n${randomGif}`;
+
+    await channel.send(previewMsg);
+    }
+
 });
 
 
