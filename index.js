@@ -69,4 +69,19 @@ client.once("ready", () => {
   });
 });
 
+client.on("messageCreate", async (message) => {
+  if (message.author.bot) return;
+
+  if (message.content === "!test") {
+    await message.reply("✅ Bot opérationnel et connecté !");
+  }
+
+  if (message.content === "!simulate") {
+    const channel = message.channel;
+    const roleMention = `<@&${process.env.ROLE_ID}>`;
+    await channel.send(`${roleMention} 🎁 Test d'opening réussi 🔥`);
+  }
+});
+
+
 client.login(process.env.DISCORD_TOKEN);
