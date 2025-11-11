@@ -15,8 +15,13 @@ server.listen(process.env.PORT || 3000, () => {
 dotenv.config();
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent, // 👈 ajoute ceci
+  ],
 });
+
 
 const openings = [
   { day: 8, user: process.env.USER_WOMAIN_ID },
