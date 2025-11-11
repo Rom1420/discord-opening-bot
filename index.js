@@ -11,18 +11,17 @@ server.listen(process.env.PORT || 3000, () => {
   console.log("🌐 Keep-alive server started");
 });
 
-
 dotenv.config();
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent, // 👈 ajoute ceci
+    GatewayIntentBits.MessageContent, // 👈 pour lire les messages
   ],
 });
 
-
+// 📅 jours d'opening
 const openings = [
   { day: 8, user: process.env.USER_WOMAIN_ID },
   { day: 15, user: process.env.USER_SACRIA_ID },
@@ -61,14 +60,24 @@ client.once("ready", () => {
 
       if (diff > 0) {
         const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
-        await channel.send(
-          `${roleMention} ⏳ Plus que **${diff} jour${diff > 1 ? "s" : ""}** avant l'opening du **${day} ${monthName}** de <@${user}> !\n${randomGif}`
-        );
+        await channel.send({
+          content: `${roleMention} ⏳ Plus que **${diff} jour${diff > 1 ? "s" : ""}** avant l'opening du **${day} ${monthName}** de <@${user}> !`,
+          embeds: [
+            {
+              image: { url: randomGif }
+            }
+          ]
+        });
       } else if (diff === 0) {
         const randomGif = gifsJourJ[Math.floor(Math.random() * gifsJourJ.length)];
-        await channel.send(
-          `${roleMention} 🎉 C’est le grand jour ! Opening de <@${user}> aujourd’hui ! 🔥\n${randomGif}`
-        );
+        await channel.send({
+          content: `${roleMention} 🎉 C’est le grand jour ! Opening de <@${user}> aujourd’hui ! 🔥`,
+          embeds: [
+            {
+              image: { url: randomGif }
+            }
+          ]
+        });
       }
     }
   });
@@ -77,15 +86,16 @@ client.once("ready", () => {
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
+  // Test de connexion
   if (message.content === "!test") {
     await message.reply("✅ Bot opérationnel et connecté !");
   }
 
+  // Simulation d'opening
   if (message.content === "!simulate") {
     const channel = message.channel;
     const roleMention = `<@&${process.env.ROLE_ID}>`;
 
-    // Choisir un jour d'opening à venir pour le test (le plus proche dans ton tableau)
     const today = new Date();
     const currentDay = today.getDate();
     const nextOpening = openings.find(o => o.day > currentDay) || openings[0];
@@ -93,18 +103,21 @@ client.on("messageCreate", async (message) => {
     const monthName = today.toLocaleString("fr-FR", { month: "long" });
     const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
 
-    const previewMsg =
-        diff > 0
-        ? `${roleMention} 🧾 **Prévisualisation de l'opening à venir !**\n\n` +
-            `⏳ Plus que **${diff} jour${diff > 1 ? "s" : ""}** avant l'opening du **${nextOpening.day} ${monthName}** ` +
-            `de <@${nextOpening.user}> 💼\n${randomGif}`
-        : `${roleMention} 🎉 **Simulation d'opening en cours !**\n` +
-            `🔥 Opening de <@${nextOpening.user}> aujourd’hui !\n${randomGif}`;
+    const content =
+      diff > 0
+        ? `${roleMention} 🧾 **Prévisualisation de l'opening à venir !**\n` +
+          `⏳ Plus que **${diff} jour${diff > 1 ? "s" : ""}** avant l'opening du **${nextOpening.day} ${monthName}** de <@${nextOpening.user}> 💼`
+        : `${roleMention} 🎉 **Simulation d'opening !**\n🔥 Opening de <@${nextOpening.user}> aujourd’hui !`;
 
-    await channel.send(previewMsg);
-    }
-
+    await channel.send({
+      content,
+      embeds: [
+        {
+          image: { url: randomGif }
+        }
+      ]
+    });
+  }
 });
-
 
 client.login(process.env.DISCORD_TOKEN);
