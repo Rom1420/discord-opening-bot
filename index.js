@@ -4,15 +4,6 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// --- Keep alive pour Koyeb ---
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("Bot is running!\n");
-});
-server.listen(process.env.PORT || 3000, () => {
-  console.log("🌐 Keep-alive server started");
-});
-
 // --- Chargement des variables ---
 dotenv.config();
 
@@ -38,43 +29,55 @@ const openings = [
   { day: 30, user: process.env.USER_SACRIA_ID },
 ];
 
-// GIFs d’attente
 const gifs = [
   "https://media4.giphy.com/media/2YHdXovMSv1NtO6V4n/giphy.gif",
   "https://media2.giphy.com/media/MEtP6XftcuDoA/giphy.gif",
   "https://media2.giphy.com/media/jc2PkKKr3clTBekMzn/giphy.gif",
 ];
 
-// GIFs jour J 🎉
 const gifsJourJ = [
   "https://media.giphy.com/media/3og0IDo7DN9PG58jzG/giphy.gif",
   "https://media.giphy.com/media/lOiJqCjiEOcmc/giphy.gif",
   "https://media.giphy.com/media/qml7DrbfkXPCU/giphy.gif",
 ];
 
+// --- Serveur HTTP ---
+const server = http.createServer(async (req, res) => {
+  if (req.url === "/trigger") {
+    console.log("⚡ Requête externe reçue → envoi du message d’opening");
+    try {
+      await sendDailyMessage();
+      res.writeHead(200, { "Content-Type": "text/plain" });
+      res.end("✅ Message envoyé avec succès !");
+    } catch (err) {
+      console.error("❌ Erreur lors de l'envoi :", err);
+      res.writeHead(500, { "Content-Type": "text/plain" });
+      res.end("Erreur pendant l’envoi du message.");
+    }
+  } else {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Bot is running.\nUse /trigger to send message.\n");
+  }
+});
+
+server.listen(process.env.PORT || 3000, () => {
+  console.log("🌐 Keep-alive & trigger server started");
+});
+
 // --- Quand le bot est prêt ---
 client.once("ready", async () => {
   console.log(`✅ Connecté en tant que ${client.user.tag}`);
   const now = new Date();
   console.log("🕒 Heure actuelle du serveur :", now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" }));
-
-  // 🔴 Cron désactivé pour debug
-  // cron.schedule("0 11 * * *", async () => {
-  //   await sendDailyMessage();
-  // });
-
-  // 🧪 Envoi automatique toutes les 30s (debug)
-  setInterval(async () => {
-    console.log("🧪 Envoi test automatique (toutes les 30s)");
-    await sendDailyMessage(true);
-  }, 30_000);
 });
 
 // --- Fonction d’envoi ---
-async function sendDailyMessage(isDebug = false) {
+async function sendDailyMessage() {
   const today = new Date();
   const currentDay = today.getDate();
   const channel = await client.channels.fetch(process.env.CHANNEL_ID);
+
+  console.log(`📅 Envoi automatique | Jour actuel : ${currentDay}`);
 
   for (const { day, user } of openings) {
     const diff = day - currentDay;
