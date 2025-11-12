@@ -31,6 +31,9 @@ const client = new Client({
   ],
 });
 
+const now = new Date();
+console.log("🕒 Heure actuelle du serveur :", now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" }));
+
 // --- Données ---
 const openings = [
   { day: 8, user: process.env.USER_WOMAIN_ID },
