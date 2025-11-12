@@ -31,8 +31,6 @@ const client = new Client({
   ],
 });
 
-const now = new Date();
-console.log("🕒 Heure actuelle du serveur :", now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" }));
 
 // --- Données ---
 const openings = [
@@ -59,9 +57,12 @@ const gifsJourJ = [
 // --- Quand le bot est prêt ---
 client.once("ready", () => {
   console.log(`✅ Connecté en tant que ${client.user.tag}`);
-
+  
+  const now = new Date();
+console.log("🕒 Heure actuelle du serveur :", now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" }));
+  
   // Envoi automatique à 10h chaque jour
-  cron.schedule("30 10 * * *", async () => {
+  cron.schedule("0 11 * * *", async () => {
     const today = new Date();
     const currentDay = today.getDate();
     const channel = await client.channels.fetch(process.env.CHANNEL_ID);
