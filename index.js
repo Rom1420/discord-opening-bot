@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
+
 
 // --- Keep alive pour Koyeb ---
 const server = http.createServer((req, res) => {
@@ -16,6 +18,17 @@ server.listen(process.env.PORT || 3000, () => {
 
 // --- Chargement des variables ---
 dotenv.config();
+
+const dataDir = path.join(process.cwd(), "data");
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const knownItemsPath = path.join(dataDir, "knownItems.json");
+if (!fs.existsSync(knownItemsPath)) {
+  fs.writeFileSync(knownItemsPath, "{}");
+  console.log("📁 Fichier knownItems.json créé !");
+}
 
 // --- Gestion du chemin local (pour assets/gicler.jpeg) ---
 const __filename = fileURLToPath(import.meta.url);
@@ -94,6 +107,11 @@ client.once("ready", () => {
   });
 });
 
+cron.schedule("0 0 * * 0", () => {  // chaque dimanche à minuit
+  fs.writeFileSync("./data/knownItems.json", "{}");
+  console.log("🧹 Réinitialisation de knownItems.json");
+});
+
 // --- Commandes texte ---
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
@@ -123,6 +141,9 @@ client.on("messageCreate", async (message) => {
       .setImage(randomGif);
 
     await channel.send({ content: roleMention, embeds: [embed] });
+  }
+  if (message.content.startsWith("!opening")) {
+    return handleOpeningCommand(message, client);
   }
 });
 
