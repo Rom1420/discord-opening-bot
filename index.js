@@ -4,7 +4,6 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 
-
 // --- Chargement des variables ---
 dotenv.config();
 
@@ -47,7 +46,7 @@ const server = http.createServer(async (req, res) => {
   if (req.url === "/trigger") {
     console.log("⚡ Requête externe reçue → envoi du message d’opening");
     try {
-      await sendDailyMessage();
+      await sendNextOpeningMessage();
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("✅ Message envoyé avec succès !");
     } catch (err) {
@@ -72,38 +71,39 @@ client.once("ready", async () => {
   console.log("🕒 Heure actuelle du serveur :", now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" }));
 });
 
-// --- Fonction d’envoi ---
-async function sendDailyMessage() {
+// --- Fonction d’envoi pour le prochain opening ---
+async function sendNextOpeningMessage() {
   const today = new Date();
   const currentDay = today.getDate();
   const channel = await client.channels.fetch(process.env.CHANNEL_ID);
+  const roleMention = `<@&${process.env.ROLE_ID}>`;
+  const monthName = today.toLocaleString("fr-FR", { month: "long" });
 
-  console.log(`📅 Envoi automatique | Jour actuel : ${currentDay}`);
+  // On cherche le prochain opening à venir ou du jour
+  const nextOpening = openings.find(o => o.day >= currentDay) || openings[0];
+  const diff = nextOpening.day - currentDay;
 
-  for (const { day, user } of openings) {
-    const diff = day - currentDay;
-    const monthName = today.toLocaleString("fr-FR", { month: "long" });
+  console.log(`📅 Envoi pour opening du ${nextOpening.day} (${diff === 0 ? "aujourd'hui" : `dans ${diff} jour(s)`})`);
 
-    if (diff > 0) {
-      const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
-      const embed = new EmbedBuilder()
-        .setColor(0xf7c600)
-        .setTitle("📦 Prochain opening")
-        .setDescription(`⏳ Plus que **${diff} jour${diff > 1 ? "s" : ""}** avant l'opening du **${day} ${monthName}** de <@${user}> !`)
-        .setImage(randomGif);
+  if (diff > 0) {
+    const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+    const embed = new EmbedBuilder()
+      .setColor(0xf7c600)
+      .setTitle("📦 Prochain opening")
+      .setDescription(`⏳ Plus que **${diff} jour${diff > 1 ? "s" : ""}** avant l'opening du **${nextOpening.day} ${monthName}** de <@${nextOpening.user}> !`)
+      .setImage(randomGif);
 
-      await channel.send({ embeds: [embed] });
-    } 
-    else if (diff === 0) {
-      const randomGif = gifsJourJ[Math.floor(Math.random() * gifsJourJ.length)];
-      const embed = new EmbedBuilder()
-        .setColor(0x41e7af)
-        .setTitle("🎉 Opening du jour !")
-        .setDescription(`🔥 C’est le grand jour pour <@${user}> !`)
-        .setImage(randomGif);
+    await channel.send({ content: roleMention, embeds: [embed] });
+  } 
+  else if (diff === 0) {
+    const randomGif = gifsJourJ[Math.floor(Math.random() * gifsJourJ.length)];
+    const embed = new EmbedBuilder()
+      .setColor(0x41e7af)
+      .setTitle("🎉 Opening du jour !")
+      .setDescription(`🔥 C’est le grand jour pour <@${nextOpening.user}> !`)
+      .setImage(randomGif);
 
-      await channel.send({ embeds: [embed], files: [localImagePath] });
-    }
+    await channel.send({ content: roleMention, embeds: [embed], files: [localImagePath] });
   }
 }
 
@@ -123,6 +123,7 @@ client.on("messageCreate", async (message) => {
     const diff = nextOpening.day - currentDay;
     const monthName = today.toLocaleString("fr-FR", { month: "long" });
     const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+    const roleMention = `<@&${process.env.ROLE_ID}>`;
 
     const embed = new EmbedBuilder()
       .setColor(0xf7c600)
@@ -134,7 +135,7 @@ client.on("messageCreate", async (message) => {
       )
       .setImage(randomGif);
 
-    await channel.send({ embeds: [embed] });
+    await channel.send({ content: roleMention, embeds: [embed] });
   }
 });
 
