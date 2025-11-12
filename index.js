@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import fs from "fs";
 import { handleOpeningStart, handleOpeningEnd } from "./commands/opening.js";
 import cron from "node-cron";
+import { handleInventory } from "./commands/inventory.js";
+
 
 
 // --- Chargement des variables ---
@@ -190,6 +192,10 @@ client.on("messageCreate", async (message) => {
   if (message.content === "!openingend") {
     return handleOpeningEnd(message, client);
   }
+
+  if (message.content === "!inventory") {
+  return handleInventory(message, client);
+}
 
 });
 

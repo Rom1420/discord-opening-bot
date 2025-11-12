@@ -40,6 +40,7 @@ export async function handleOpeningStart(message, client) {
   console.log(`🚀 Démarrage de l’opening pour ${userId} (SteamID: ${steamId})`);
 
   const delay = 30000; // 30s entre chaque vérif
+  console.log("DEBUG OPENING_CHANNEL_ID =", process.env.OPENING_CHANNEL_ID);
   const openingChannel = await client.channels.fetch(process.env.OPENING_CHANNEL_ID);
 
   if (!steamId) return message.reply("⚠️ Ton compte Discord n’est pas encore lié à un SteamID !");
