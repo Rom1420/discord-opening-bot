@@ -4,6 +4,8 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import { handleOpeningStart, handleOpeningEnd } from "./commands/opening.js";
+import cron from "node-cron";
 
 
 // --- Chargement des variables ---
@@ -86,6 +88,24 @@ client.once("ready", async () => {
 
 // --- Fonction d’envoi ---
 async function sendNextOpeningMessage() {
+  const todayISO = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const lastFile = path.join(dataDir, "lastOpeningMessage.json");
+
+  // 📂 Charger dernière date d’envoi
+  let lastSent = null;
+  if (fs.existsSync(lastFile)) {
+    lastSent = JSON.parse(fs.readFileSync(lastFile, "utf8"))?.lastSent;
+  }
+
+  // ⛔ Bloquer si déjà envoyé aujourd’hui
+  if (lastSent === todayISO) {
+    console.log("⛔ Message déjà envoyé aujourd'hui → pas d’envoi");
+    return;
+  }
+
+  // 📝 On met à jour maintenant (sécurité anti double envoi)
+  fs.writeFileSync(lastFile, JSON.stringify({ lastSent: todayISO }, null, 2));
+
   const today = new Date();
   const currentDay = today.getDate();
   const channel = await client.channels.fetch(process.env.CHANNEL_ID);
@@ -132,10 +152,6 @@ async function sendNextOpeningMessage() {
   }
 }
 
-cron.schedule("0 0 * * 0", () => {  // chaque dimanche à minuit
-  fs.writeFileSync("./data/knownItems.json", "{}");
-  console.log("🧹 Réinitialisation de knownItems.json");
-});
 
 // --- Commandes texte ---
 client.on("messageCreate", async (message) => {
@@ -167,14 +183,13 @@ client.on("messageCreate", async (message) => {
 
     await channel.send({ content: roleMention, embeds: [embed] });
   }
-  if (message.content.startsWith("!opening")) {
-    return handleOpeningCommand(message, client);
+  if (message.content === "!openingstart") {
+    return handleOpeningStart(message, client);
   }
 
-  if (message.content === "!openingtest") {
-  await message.reply("🧪 Simulation d’opening en cours...");
-  return handleOpeningCommand(message, client, { simulate: true });
-}
+  if (message.content === "!openingend") {
+    return handleOpeningEnd(message, client);
+  }
 
 });
 
