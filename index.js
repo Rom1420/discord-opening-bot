@@ -71,7 +71,7 @@ client.once("ready", async () => {
   console.log("🕒 Heure actuelle du serveur :", now.toLocaleString("fr-FR", { timeZone: "Europe/Paris" }));
 });
 
-// --- Fonction d’envoi pour le prochain opening ---
+// --- Fonction d’envoi ---
 async function sendNextOpeningMessage() {
   const today = new Date();
   const currentDay = today.getDate();
@@ -79,7 +79,19 @@ async function sendNextOpeningMessage() {
   const roleMention = `<@&${process.env.ROLE_ID}>`;
   const monthName = today.toLocaleString("fr-FR", { month: "long" });
 
-  // On cherche le prochain opening à venir ou du jour
+  // 🔹 Supprimer le dernier message du bot avant d’envoyer le nouveau
+  const messages = await channel.messages.fetch({ limit: 10 });
+  const lastBotMessage = messages.find(m => m.author.id === client.user.id);
+  if (lastBotMessage) {
+    try {
+      await lastBotMessage.delete();
+      console.log("🧹 Ancien message supprimé avant envoi du nouveau");
+    } catch (err) {
+      console.warn("⚠️ Impossible de supprimer l’ancien message :", err.message);
+    }
+  }
+
+  // Trouver le prochain opening à venir ou du jour
   const nextOpening = openings.find(o => o.day >= currentDay) || openings[0];
   const diff = nextOpening.day - currentDay;
 
