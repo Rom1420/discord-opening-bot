@@ -145,6 +145,14 @@ client.on("messageCreate", async (message) => {
   if (message.content.startsWith("!opening")) {
     return handleOpeningCommand(message, client);
   }
+
+  if (message.content === "!openingtest") {
+  await message.reply("🧪 Simulation d’opening en cours...");
+  return handleOpeningCommand(message, client, { simulate: true });
+}
+
 });
+
+
 
 client.login(process.env.DISCORD_TOKEN);

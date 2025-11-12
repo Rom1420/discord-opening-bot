@@ -10,36 +10,54 @@ let knownItems = fs.existsSync(KNOWN_ITEMS_FILE) ? JSON.parse(fs.readFileSync(KN
 
 // ⚙️ Associe chaque utilisateur Discord à un SteamID
 const playerMap = {
-  [process.env.USER_WOMAIN_ID]: "76561198000000000",
+  [process.env.USER_WOMAIN_ID]: "76561198802724111",
   [process.env.USER_SACRIA_ID]: "76561198011111111",
 };
 
-export async function handleOpeningCommand(message, client) {
+export async function handleOpeningCommand(message, client, options = {}) {
   const userId = message.author.id;
-  const steamId = playerMap[userId];
-
-  if (!steamId) {
-    return message.reply("❌ Ton SteamID n’est pas encore lié à ton compte Discord !");
-  }
+  const steamId = "76561198000000000"; // ou tu peux le mapper
+  const simulate = options.simulate || false;
 
   const openingChannel = await client.channels.fetch(process.env.OPENING_CHANNEL_ID);
   await message.channel.send(`🎬 Début de l’opening de <@${userId}>... 🔍`);
 
-  const data = await getSteamInventory(steamId);
-  if (!data.assets) {
-    return message.reply("⚠️ Impossible de récupérer ton inventaire Steam.");
-  }
+  let newDrops = [];
 
-  const newDrops = [];
-  for (const item of data.descriptions) {
-    const key = `${steamId}_${item.classid}`;
-    if (!knownItems[key]) {
-      knownItems[key] = true;
-      newDrops.push(item);
+  if (simulate) {
+    // --- Simulation de 3 items mockés ---
+    newDrops = [
+      {
+        market_hash_name: "★ Karambit | Doppler (Factory New)",
+        icon_url: "https://steamcommunity-a.akamaihd.net/economy/image/...",
+        type: "★ Covert Knife, Factory New",
+      },
+      {
+        market_hash_name: "AK-47 | Redline (Field-Tested)",
+        icon_url: "https://steamcommunity-a.akamaihd.net/economy/image/...",
+        type: "Classified Rifle, Field-Tested",
+      },
+      {
+        market_hash_name: "Operation Case",
+        icon_url: "https://steamcommunity-a.akamaihd.net/economy/image/...",
+        type: "Consumer Grade Container",
+      },
+    ];
+  } else {
+    // --- Comportement normal ---
+    const data = await getSteamInventory(steamId);
+    if (!data.assets) {
+      return message.reply("⚠️ Impossible de récupérer ton inventaire Steam.");
+    }
+
+    for (const item of data.descriptions) {
+      const key = `${steamId}_${item.classid}`;
+      if (!knownItems[key]) {
+        knownItems[key] = true;
+        newDrops.push(item);
+      }
     }
   }
-
-  fs.writeFileSync(KNOWN_ITEMS_FILE, JSON.stringify(knownItems, null, 2));
 
   if (!newDrops.length) {
     return message.reply("Aucun nouvel item détecté depuis ton dernier opening !");
@@ -54,3 +72,4 @@ export async function handleOpeningCommand(message, client) {
 
   await message.channel.send(`✅ Résumé envoyé dans <#${process.env.OPENING_CHANNEL_ID}>`);
 }
+
